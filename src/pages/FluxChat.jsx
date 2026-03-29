@@ -106,7 +106,7 @@ export default function FluxChat() {
   // Initial greeting
   useEffect(() => {
     preloadVoices()
-    const greeting = getOfflineResponse(detectContext({ sessionCount: 1, streakDays: 1 }))
+    const greeting = getOfflineResponse(detectContext({ sessionCount: 1, streakDays: 1 }), profile)
     const msg = { role: 'assistant', text: greeting, id: 1 }
     setMessages([msg])
     setTimeout(() => {
@@ -153,7 +153,7 @@ export default function FluxChat() {
         }, 150)
       }
     } catch {
-      const fallback = getOfflineResponse('general')
+      const fallback = getOfflineResponse('general', profile)
       setMessages(prev => [...prev, { role: 'assistant', text: fallback, id: Date.now(), offline: true }])
       setLoading(false)
     }
