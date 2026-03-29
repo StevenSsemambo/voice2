@@ -8,6 +8,13 @@ const NAV = [
   { path: '/settings',  icon: '⚙️', label: 'You' },
 ]
 
+// All V5 deep-link pages that should highlight the Explore tab
+const EXPLORE_PATHS = [
+  '/adventure', '/comm', '/brave', '/speaklab', '/breathe',
+  '/talktales', '/journal', '/family',
+  '/analysis', '/act', '/daf', '/brave-wall', '/biomarker', '/weekly-report',
+]
+
 export default function BottomNav() {
   const location  = useLocation()
   const navigate  = useNavigate()
@@ -20,7 +27,7 @@ export default function BottomNav() {
         <div className="flex justify-around items-center">
           {NAV.map(item => {
             const active = location.pathname === item.path ||
-              (item.path === '/adventure' && ['/adventure','/comm','/brave','/speaklab','/breathe','/talktales','/journal','/family'].includes(location.pathname))
+              (item.path === '/adventure' && EXPLORE_PATHS.includes(location.pathname))
             return (
               <button key={item.path} onClick={() => navigate(item.path)}
                 className={`nav-pill ${active ? 'active' : ''} ${item.special ? 'relative' : ''}`}>
