@@ -146,7 +146,7 @@ export default function Adventure() {
       )
       setFeedback(fb)
     } catch {
-      setFeedback(getOfflineResponse('celebration'))
+      setFeedback(getOfflineResponse('celebration', profile))
     }
     setLoadingFeedback(false)
 
@@ -160,15 +160,17 @@ export default function Adventure() {
     await loadProgress()
 
     if (isVoluntary) {
-      triggerFlux(getOfflineResponse('voluntary_stutter'))
+      triggerFlux(getOfflineResponse('voluntary_stutter', profile))
     } else {
-      triggerFlux(getOfflineResponse('celebration'))
+      triggerFlux(getOfflineResponse('celebration', profile))
     }
     setMissionState('done')
   }
 
+  // Zone requires at least 1 completed mission in the previous zone to unlock
+  // (was 3, which locked everything for new users)
   const getZoneStars = (zoneId) => zoneProgress[zoneId] || 0
-  const isZoneLocked = (idx) => idx > 0 && getZoneStars(ZONES[idx - 1].id) < 3
+  const isZoneLocked = (idx) => idx > 0 && getZoneStars(ZONES[idx - 1].id) < 1
 
   return (
     <div className="min-h-full pb-24 page-enter">
@@ -176,7 +178,7 @@ export default function Adventure() {
       {activeMission && (
         <div>
           <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-            <button onClick={() => setActiveMission(null)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white">←</button>
+            <button onClick={() => { setActiveMission(null); setMissionState('brief'); setFeedback('') }} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white">←</button>
             <div>
               <h1 className="font-display text-lg font-bold text-white">{activeMission.title}</h1>
               <p className="text-white/40 text-xs">{activeZone.name} · {activeZone.skill}</p>
@@ -235,7 +237,7 @@ export default function Adventure() {
                 )}
 
                 <div className="flex gap-3">
-                  <button onClick={() => setActiveMission(null)} className="btn-ghost flex-1">More Missions</button>
+                  <button onClick={() => { setActiveMission(null); setMissionState('brief'); setFeedback('') }} className="btn-ghost flex-1">More Missions</button>
                   <button onClick={() => navigate('/home')} className="btn-aqua flex-1">Home</button>
                 </div>
               </div>
@@ -248,7 +250,7 @@ export default function Adventure() {
       {!activeMission && (
         <>
           <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-            <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white">←</button>
+            <button onClick={() => navigate('/home')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white">←</button>
             <h1 className="font-display text-xl font-bold text-white flex-1">Adventure Mode</h1>
             <span className="text-2xl">🗺️</span>
           </div>
@@ -266,7 +268,7 @@ export default function Adventure() {
               return (
                 <div
                   key={zone.id}
-                  className={`zone-card ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} border ${zone.bg}`}
+                  className={`zone-card ${locked ? 'locked opacity-40 cursor-not-allowed' : 'cursor-pointer'} border ${zone.bg}`}
                   onClick={() => !locked && setActiveZone(activeZone?.id === zone.id ? null : zone)}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${zone.color} opacity-10 rounded-3xl`} />
