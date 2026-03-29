@@ -32,52 +32,90 @@ export default function Settings() {
   const [showMemoryReset, setShowMemoryReset] = useState(false)
   const [memoryStats, setMemoryStats] = useState({ insights: 0, strengths: 0 })
   const [voices, setVoices]           = useState([])
+  const [persona, setPersonaState]    = useState('sage') // Added missing persona state
+  const [fluxStage, setFluxStage]     = useState(null)   // Added missing fluxStage state
+  
   const navigate  = useNavigate()
   const { loadProfile, signOut, userEmail, theme, setTheme, fontSize, setFontSize } = useApp()
 
   useEffect(() => {
     const load = async () => {
-      const p = await getProfile()
-      if (p) { setProfileData(p); setName(p.name||''); setAgeGroup(p.ageGroup||'explorer'); setMode(p.mode||'stutter') }
-      const notif = await getSetting('notifications', true)
-      const speak = await getSetting('autoSpeak', true)
-      setNotifications(notif); setAutoSpeak(speak)
-      const ins = await loadMemory(MemoryKeys.INSIGHTS, [])
-      const str = await loadMemory(MemoryKeys.STRENGTHS, [])
-      setMemoryStats({ insights: ins.length, strengths: str.length })
-      if (ttsAvailable()) setVoices(getVoices().slice(0, 8))
-      const personaId = await loadPersona()
-      setPersonaState(personaId)
-      const sessions = await import('../utils/db').then(m => m.getTotalSessions())
-      setFluxStage(getCurrentStage(sessions))
+      try {
+        const p = await getProfile()
+        if (p) { 
+          setProfileData(p); 
+          setName(p.name||''); 
+          setAgeGroup(p.ageGroup||'explorer'); 
+          setMode(p.mode||'stutter') 
+        }
+        const notif = await getSetting('notifications', true)
+        const speak = await getSetting('autoSpeak', true)
+        setNotifications(notif); 
+        setAutoSpeak(speak)
+        
+        const ins = await loadMemory(MemoryKeys.INSIGHTS, [])
+        const str = await loadMemory(MemoryKeys.STRENGTHS, [])
+        setMemoryStats({ insights: ins.length, strengths: str.length })
+        
+        if (ttsAvailable()) setVoices(getVoices().slice(0, 8))
+        
+        const personaId = await loadPersona()
+        setPersonaState(personaId)
+        
+        const { getTotalSessions } = await import('../utils/db')
+        const sessions = await getTotalSessions()
+        setFluxStage(getCurrentStage(sessions))
+      } catch (error) {
+        console.error('Error loading settings:', error)
+      }
     }
     load()
   }, [])
 
   const handleSave = async () => {
     setSaving(true)
-    await saveProfile({ ...profileData, name: name.trim(), ageGroup, mode })
-    await setSetting('notifications', notifications)
-    await setSetting('autoSpeak', autoSpeak)
-    await savePersona(persona)
-    await loadProfile()
-    setSaving(false); setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    try {
+      await saveProfile({ ...profileData, name: name.trim(), ageGroup, mode })
+      await setSetting('notifications', notifications)
+      await setSetting('autoSpeak', autoSpeak)
+      await savePersona(persona)
+      await loadProfile()
+      setSaving(false); 
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      setSaving(false)
+    }
   }
 
   const handleFullReset = async () => {
-    await Promise.all([
-      db.sessions.clear(), db.recordings.clear(), db.fearLadder.clear(),
-      db.progress.clear(), db.journal.clear(), db.braveStars.clear(),
-      db.streaks.clear(), db.profile.clear(), db.settings.clear(),
-    ])
-    navigate('/onboarding', { replace: true })
+    try {
+      await Promise.all([
+        db.sessions.clear(), 
+        db.recordings.clear(), 
+        db.fearLadder.clear(),
+        db.progress.clear(), 
+        db.journal.clear(), 
+        db.braveStars.clear(),
+        db.streaks.clear(), 
+        db.profile.clear(), 
+        db.settings.clear(),
+      ])
+      navigate('/onboarding', { replace: true })
+    } catch (error) {
+      console.error('Error resetting data:', error)
+    }
   }
 
   const handleMemoryReset = async () => {
-    await clearMemory()
-    setMemoryStats({ insights: 0, strengths: 0 })
-    setShowMemoryReset(false)
+    try {
+      await clearMemory()
+      setMemoryStats({ insights: 0, strengths: 0 })
+      setShowMemoryReset(false)
+    } catch (error) {
+      console.error('Error resetting memory:', error)
+    }
   }
 
   const Toggle = ({ value, onChange }) => (
@@ -91,13 +129,13 @@ export default function Settings() {
 
   const Section = ({ title, children }) => (
     <div className="mb-6">
-      <p className="section-label mb-3 px-1">{title}</p>
+      <p className="text-white/40 text-xs font-display font-semibold uppercase tracking-wide mb-3 px-1">{title}</p>
       <div className="space-y-2">{children}</div>
     </div>
   )
 
   const Row = ({ icon, label, sublabel, right }) => (
-    <div className="card flex items-center gap-3">
+    <div className="flex items-center gap-3 p-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
       <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
            style={{ background: 'rgba(255,255,255,0.06)' }}>{icon}</div>
       <div className="flex-1 min-w-0">
@@ -111,9 +149,10 @@ export default function Settings() {
   return (
     <div className="min-h-full pb-28 page-enter" style={{ zIndex: 1 }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-8 pb-4">
+      <div className="flex items-center gap-3 px-5 pt-8 pb-4 sticky top-0 z-10" style={{ background: 'var(--ink)', backdropFilter: 'blur(10px)' }}>
         <button onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full glass flex items-center justify-center text-white">←</button>
+          className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
+          style={{ background: 'rgba(255,255,255,0.1)' }}>←</button>
         <div className="flex-1">
           <h1 className="font-display text-xl font-bold text-white">Settings</h1>
         </div>
@@ -123,8 +162,8 @@ export default function Settings() {
       <div className="px-5">
 
         {/* Profile Card */}
-        <div className="card-lg mb-6 flex items-center gap-4"
-             style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.08), rgba(167,139,250,0.06))' }}>
+        <div className="rounded-2xl p-4 mb-6 flex items-center gap-4"
+             style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.08), rgba(167,139,250,0.06))', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-display font-bold text-xl"
                style={{ background: 'linear-gradient(135deg, var(--aqua), var(--violet))', color: '#05080f' }}>
             {name.charAt(0).toUpperCase() || '?'}
@@ -132,10 +171,12 @@ export default function Settings() {
           <div>
             <div className="font-display font-bold text-white text-lg">{name || 'Your name'}</div>
             <div className="flex gap-2 mt-1">
-              <span className="pill" style={{ background:'rgba(34,211,238,0.1)', borderColor:'rgba(34,211,238,0.25)', color:'var(--aqua)', fontSize:'10px' }}>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs" 
+                    style={{ background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.25)', color:'var(--aqua)' }}>
                 {AGE_GROUPS.find(g=>g.id===ageGroup)?.icon} {AGE_GROUPS.find(g=>g.id===ageGroup)?.label}
               </span>
-              <span className="pill" style={{ background:'rgba(167,139,250,0.1)', borderColor:'rgba(167,139,250,0.25)', color:'var(--violet)', fontSize:'10px' }}>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+                    style={{ background:'rgba(167,139,250,0.1)', border:'1px solid rgba(167,139,250,0.25)', color:'var(--violet)' }}>
                 {MODES.find(m=>m.id===mode)?.icon} {MODES.find(m=>m.id===mode)?.label}
               </span>
             </div>
@@ -147,7 +188,9 @@ export default function Settings() {
           <div>
             <label className="text-white/40 text-xs mb-1.5 block px-1">Name</label>
             <input value={name} onChange={e => setName(e.target.value)}
-              className="input-field" placeholder="Your name" />
+              className="w-full px-4 py-3 rounded-2xl text-white text-sm outline-none transition-all"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              placeholder="Your name" />
           </div>
         </Section>
 
@@ -204,7 +247,7 @@ export default function Settings() {
 
         {/* AI Memory */}
         <Section title="AI Memory">
-          <div className="card" style={{ borderColor: 'rgba(34,211,238,0.15)' }}>
+          <div className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(34,211,238,0.15)' }}>
             <div className="flex items-start gap-3 mb-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
                    style={{ background: 'rgba(34,211,238,0.1)' }}>🧠</div>
@@ -224,8 +267,10 @@ export default function Settings() {
               <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <p className="text-red-300 text-xs mb-2">This clears all Flux insights, strengths, and learned patterns. Your sessions stay safe.</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowMemoryReset(false)} className="btn-ghost flex-1 text-xs py-1.5 font-display">Cancel</button>
-                  <button onClick={handleMemoryReset} className="btn-danger flex-1 text-xs py-1.5 font-display">Reset Memory</button>
+                  <button onClick={() => setShowMemoryReset(false)} className="flex-1 text-xs py-1.5 font-display rounded-xl transition-all"
+                          style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}>Cancel</button>
+                  <button onClick={handleMemoryReset} className="flex-1 text-xs py-1.5 font-display rounded-xl transition-all"
+                          style={{ background: '#ef4444', color: 'white' }}>Reset Memory</button>
                 </div>
               </div>
             )}
@@ -234,15 +279,15 @@ export default function Settings() {
 
         {/* Save */}
         <button onClick={handleSave} disabled={saving}
-          className="btn-aqua w-full py-4 font-display text-base mb-4 transition-all"
-          style={{ color: '#05080f' }}>
+          className="w-full py-4 rounded-2xl font-display font-bold text-base mb-4 transition-all active:scale-95"
+          style={{ background: 'var(--aqua)', color: '#05080f' }}>
           {saved ? '✓ Saved!' : saving ? 'Saving…' : 'Save Changes'}
         </button>
 
         {/* About */}
-        <div className="card text-center mb-6" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-          <div className="animate-flux-float inline-block mb-2">
-            <Flux size={48} ageGroup={ageGroup} mood="happy" floating={false} />
+        <div className="text-center p-6 rounded-2xl mb-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="animate-pulse inline-block mb-2">
+            <Flux size={48} ageGroup={ageGroup} mood="happy" />
           </div>
           <div className="font-display font-bold text-white">YoSpeech v2.0</div>
           <div className="text-white/35 text-sm mt-1">Find Your Flow</div>
@@ -286,7 +331,7 @@ export default function Settings() {
 
         {/* Appearance */}
         <Section title="Appearance">
-          <div>
+          <div className="mb-4">
             <label className="text-white/40 text-xs mb-2 block px-1">Theme</label>
             <div className="grid grid-cols-2 gap-2">
               {[{id:'dark',label:'Dark',icon:'🌙'},{id:'light',label:'Light',icon:'☀️'}].map(t => (
@@ -360,8 +405,10 @@ export default function Settings() {
             <div className="p-4 rounded-2xl" style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.06)' }}>
               <p className="text-red-300 text-sm mb-3 leading-relaxed">This permanently deletes all sessions, recordings, journal entries, progress, and Flux memory. This cannot be undone.</p>
               <div className="flex gap-2">
-                <button onClick={() => setShowReset(false)} className="btn-ghost flex-1 text-sm py-2.5 font-display">Cancel</button>
-                <button onClick={handleFullReset} className="btn-danger flex-1 text-sm py-2.5 font-display">Delete Everything</button>
+                <button onClick={() => setShowReset(false)} className="flex-1 text-sm py-2.5 font-display rounded-xl transition-all"
+                        style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}>Cancel</button>
+                <button onClick={handleFullReset} className="flex-1 text-sm py-2.5 font-display rounded-xl transition-all"
+                        style={{ background: '#ef4444', color: 'white' }}>Delete Everything</button>
               </div>
             </div>
           )}
