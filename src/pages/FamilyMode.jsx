@@ -90,7 +90,7 @@ export default function FamilyMode() {
       await addSession('family', 40, { passage: selectedPassage.title })
       await markTodayStreak()
       await refreshProfile()
-      triggerFlux(getOfflineResponse('celebration'))
+      triggerFlux(getOfflineResponse('celebration', profile))
       setStage('celebrate')
     }
   }
@@ -98,7 +98,7 @@ export default function FamilyMode() {
   return (
     <div className="min-h-full pb-24 page-enter">
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <button onClick={() => { setStage('menu'); navigate(stage === 'menu' ? -1 : undefined) }}
+        <button onClick={() => { setStage('menu'); navigate(stage === 'menu' ? -1 : '/home') }}
           className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white">←</button>
         <h1 className="font-display text-xl font-bold text-white flex-1">Family Mode</h1>
         <span className="text-2xl">👨‍👩‍👧</span>
