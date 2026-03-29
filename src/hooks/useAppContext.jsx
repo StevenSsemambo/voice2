@@ -47,12 +47,15 @@ export const AppProvider = ({ children }) => {
       applyTheme(savedTheme)
       applyFontSize(savedFont)
 
-      // Check if streak is at risk (after 7pm, no session today)
+      // Check if streak is at risk (after 7pm, has an active streak, but no session yet today)
       const hour = new Date().getHours()
       if (hour >= 19 && s > 0) {
         const todayStr = new Date().toDateString()
         const todayEntry = await db.streaks.where('date').equals(todayStr).first()
         if (!todayEntry) setStreakAtRisk(true)
+        else setStreakAtRisk(false)
+      } else {
+        setStreakAtRisk(false)
       }
     } catch (e) {
       console.error('loadProfile:', e)
