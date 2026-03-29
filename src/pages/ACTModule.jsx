@@ -283,7 +283,7 @@ function SessionCard({ session, completed, locked, onStart }) {
 }
 
 // ─── ACTIVE SESSION ────────────────────────────────────────────────────────────
-function ActiveSession({ session, onComplete, profile }) {
+function ActiveSession({ session, onComplete, profile, showCelebration, setShowCelebration, celebScore, setCelebScore }) {
   const [sectionIdx, setSectionIdx] = useState(0)
   const [recording, setRecording]   = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -304,7 +304,11 @@ function ActiveSession({ session, onComplete, profile }) {
 
   const startRec = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) { setRecording(true); return }
+    if (!SR) {
+      // Browser doesn't support speech recognition — just activate visual recording mode
+      setRecording(true)
+      return
+    }
     recRef.current = new SR()
     recRef.current.continuous = true
     recRef.current.interimResults = false
@@ -349,6 +353,11 @@ Give a warm, specific 2-3 sentence closing reflection as Flux. Reference what th
       await saveActSession(session.num, JSON.stringify(allReflections))
       await addSession('act', 40, { sessionNum: session.num })
       await markTodayStreak()
+
+      // Trigger celebration
+      const score = 40 + session.num * 5
+      setCelebScore(score)
+      setShowCelebration(true)
     }
   }
 
@@ -381,6 +390,16 @@ Give a warm, specific 2-3 sentence closing reflection as Flux. Reference what th
           className="btn-aqua w-full py-4 font-display" style={{ color:'#05080f' }}>
           {session.num < 8 ? `Continue to Session ${session.num + 1} →` : '🎉 Programme Complete!'}
         </button>
+        {showCelebration && (
+          <CelebrationScreen
+            sessionType="act"
+            score={celebScore}
+            stars={Math.round(celebScore / 10)}
+            ageGroup={profile?.ageGroup || 'explorer'}
+            profile={profile}
+            onDismiss={() => setShowCelebration(false)}
+          />
+        )}
       </div>
     )
   }
@@ -447,16 +466,6 @@ Give a warm, specific 2-3 sentence closing reflection as Flux. Reference what th
         className="btn-aqua w-full py-4 font-display" style={{ color: '#05080f' }}>
         {isLast ? 'Complete Session ✓' : 'Next →'}
       </button>
-      {showCelebration && (
-        <CelebrationScreen
-          sessionType="act"
-          score={celebScore}
-          stars={Math.round(celebScore / 10)}
-          ageGroup={profile?.ageGroup || 'explorer'}
-          profile={profile}
-          onDismiss={() => setShowCelebration(false)}
-        />
-      )}
     </div>
   )
 }
@@ -523,7 +532,7 @@ export default function ACTModule() {
           <div className="flex flex-col gap-2.5">
             {ACT_SESSIONS.map((session, i) => {
               const isCompleted = completed.includes(session.num)
-              const isLocked = !isCompleted && i > 0 && !completed.includes(session.num - 1) && session.num > 1
+              const isLocked = i > 0 && !completed.includes(i) // locked if previous session not done
               return (
                 <SessionCard
                   key={session.num}
@@ -552,7 +561,15 @@ export default function ACTModule() {
               </div>
             </div>
           </div>
-          <ActiveSession session={activeSession} onComplete={handleComplete} profile={profile}/>
+          <ActiveSession
+            session={activeSession}
+            onComplete={handleComplete}
+            profile={profile}
+            showCelebration={showCelebration}
+            setShowCelebration={setShowCelebration}
+            celebScore={celebScore}
+            setCelebScore={setCelebScore}
+          />
         </div>
       )}
     </div>
