@@ -104,43 +104,49 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen max-w-md mx-auto relative overflow-x-hidden" style={{ background:'var(--ink)' }}>
+    <div className="fixed inset-0 overflow-hidden" style={{ background:'var(--ink)' }}>
+      {/* Main scrollable container */}
+      <div className="relative h-full w-full max-w-md mx-auto flex flex-col overflow-hidden">
+        
+        {/* Content wrapper with independent scrolling */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="relative min-h-full">
+            <Routes>
+              <Route path="/"              element={<Splash />} />
+              <Route path="/auth"          element={<Auth />} />
+              <Route path="/onboarding"    element={<Onboarding />} />
 
-      <div className="relative z-10">
-        <Routes>
-          <Route path="/"              element={<Splash />} />
-          <Route path="/auth"          element={<Auth />} />
-          <Route path="/onboarding"    element={<Onboarding />} />
+              <Route path="/home" element={
+                <RequireProfile>
+                  <HomeWrapper>
+                    <Home/>
+                  </HomeWrapper>
+                </RequireProfile>
+              } />
 
-          <Route path="/home" element={
-            <RequireProfile>
-              <HomeWrapper>
-                <Home/>
-              </HomeWrapper>
-            </RequireProfile>
-          } />
+              <Route path="/adventure"     element={<RequireProfile><Adventure /></RequireProfile>} />
+              <Route path="/comm"          element={<RequireProfile><CommAcademy /></RequireProfile>} />
+              <Route path="/breathe"       element={<RequireProfile><Breathe /></RequireProfile>} />
+              <Route path="/speaklab"      element={<RequireProfile><SpeakLab /></RequireProfile>} />
+              <Route path="/brave"         element={<RequireProfile><BraveMissions /></RequireProfile>} />
+              <Route path="/talktales"     element={<RequireProfile><TalkTales /></RequireProfile>} />
+              <Route path="/journal"       element={<RequireProfile><Journal /></RequireProfile>} />
+              <Route path="/family"        element={<RequireProfile><FamilyMode /></RequireProfile>} />
+              <Route path="/progress"      element={<RequireProfile><Progress /></RequireProfile>} />
+              <Route path="/settings"      element={<RequireProfile><Settings /></RequireProfile>} />
+              <Route path="/flux-chat"     element={<RequireProfile><FluxChat /></RequireProfile>} />
 
-          <Route path="/adventure"     element={<RequireProfile><Adventure /></RequireProfile>} />
-          <Route path="/comm"          element={<RequireProfile><CommAcademy /></RequireProfile>} />
-          <Route path="/breathe"       element={<RequireProfile><Breathe /></RequireProfile>} />
-          <Route path="/speaklab"      element={<RequireProfile><SpeakLab /></RequireProfile>} />
-          <Route path="/brave"         element={<RequireProfile><BraveMissions /></RequireProfile>} />
-          <Route path="/talktales"     element={<RequireProfile><TalkTales /></RequireProfile>} />
-          <Route path="/journal"       element={<RequireProfile><Journal /></RequireProfile>} />
-          <Route path="/family"        element={<RequireProfile><FamilyMode /></RequireProfile>} />
-          <Route path="/progress"      element={<RequireProfile><Progress /></RequireProfile>} />
-          <Route path="/settings"      element={<RequireProfile><Settings /></RequireProfile>} />
-          <Route path="/flux-chat"     element={<RequireProfile><FluxChat /></RequireProfile>} />
+              <Route path="/analysis"      element={<RequireProfile><SpeechAnalysis /></RequireProfile>} />
+              <Route path="/act"           element={<RequireProfile><ACTModule /></RequireProfile>} />
+              <Route path="/daf"           element={<RequireProfile><DAFMode /></RequireProfile>} />
+              <Route path="/brave-wall"    element={<RequireProfile><BraveWall /></RequireProfile>} />
+              <Route path="/biomarker"     element={<RequireProfile><VoiceBiomarker /></RequireProfile>} />
+              <Route path="/weekly-report" element={<RequireProfile><WeeklyReport /></RequireProfile>} />
 
-          <Route path="/analysis"      element={<RequireProfile><SpeechAnalysis /></RequireProfile>} />
-          <Route path="/act"           element={<RequireProfile><ACTModule /></RequireProfile>} />
-          <Route path="/daf"           element={<RequireProfile><DAFMode /></RequireProfile>} />
-          <Route path="/brave-wall"    element={<RequireProfile><BraveWall /></RequireProfile>} />
-          <Route path="/biomarker"     element={<RequireProfile><VoiceBiomarker /></RequireProfile>} />
-          <Route path="/weekly-report" element={<RequireProfile><WeeklyReport /></RequireProfile>} />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </div>
 
         <BottomNav />
         <Notification />
