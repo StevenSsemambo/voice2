@@ -82,7 +82,7 @@ export default function Home() {
 
   const tapFlux = () => {
     haptics.tap()
-    const m = getOfflineResponse('encouragement')
+    const m = getOfflineResponse('encouragement'profile)
     setFluxMsg(m)
     fluxSay(m, true)
   }
