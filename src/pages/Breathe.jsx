@@ -28,7 +28,7 @@ export default function Breathe() {
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [cycles, setCycles] = useState(0)
   const [progress, setProgress] = useState(0)
-  const [fluxMsg, setFluxMsg] = useState(getOfflineResponse('breathing'))
+  const [fluxMsg, setFluxMsg] = useState(getOfflineResponse('breathing',profile))
   const [done, setDone] = useState(false)
   const [micLevel, setMicLevel] = useState(0)
 
@@ -109,7 +109,7 @@ export default function Breathe() {
     await refreshProfile()
     haptics.sessionDone()
     setShowCelebration(true)
-    triggerFlux(getOfflineResponse('celebration'))
+    triggerFlux(getOfflineResponse('celebration',profile))
   }
 
   const startExercise = async (ex) => {
@@ -119,7 +119,7 @@ export default function Breathe() {
     setPhaseIdx(0)
     setProgress(0)
     setDone(false)
-    const bMsg = getOfflineResponse('breathing'); setFluxMsg(bMsg); fluxSay(bMsg, true)
+    const bMsg = getOfflineResponse('breathing',profile); setFluxMsg(bMsg); fluxSay(bMsg, true)
     await startMic()
   }
 
