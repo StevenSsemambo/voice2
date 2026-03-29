@@ -1344,12 +1344,15 @@ const _getOfflinePool = (cat) => {
   return MAP[cat] || ENCOURAGEMENT.general.explorer
 }
 
-export const getOfflineResponse = (cat) => {
+export const getOfflineResponse = (cat, profile = null) => {
   const pool = _getOfflinePool(cat)
   if (!_rotIdx[cat]) _rotIdx[cat] = 0
   const r = pool[_rotIdx[cat] % pool.length]
   _rotIdx[cat]++
-  return r || "You're doing great. Keep going. 💧"
+  const raw = r || "You're doing great. Keep going. 💧"
+  // Fill the {name} slot immediately so callers never see a literal "{name}"
+  const name = profile?.name || null
+  return name ? raw.replace(/\{name\}/g, name) : raw.replace(/\{name\}/g, 'friend')
 }
 
 export const getOfflineMission = (lvl) => generateBraveMissionOffline(lvl)
