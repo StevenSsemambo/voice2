@@ -74,7 +74,7 @@ export default function Splash() {
     const t4 = setTimeout(async () => {
       setDone(true)
       const onboarded = await getSetting('onboarded', false)
-      navigate(onboarded ? '/home' : '/onboarding', { replace: true })
+      navigate(onboarded ? '/home' : '/auth', { replace: true })
     }, 3900)
 
     return () => [t1,t2,t3,t4].forEach(clearTimeout)
