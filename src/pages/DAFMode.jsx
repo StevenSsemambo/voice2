@@ -122,7 +122,7 @@ export default function DAFMode() {
     haptics.sessionDone()
     setShowCelebration(true)
 
-    const msg = getOfflineResponse('celebration')
+    const msg = getOfflineResponse('celebration', profile)
     fluxSay(msg, true)
   }
 
