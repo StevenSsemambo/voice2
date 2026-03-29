@@ -292,7 +292,7 @@ export default function FluxChat() {
             </div>
           </div>
         ) : (
-          /* Text + mic UI */
+          /* Text + mic UI - FIXED TEXTAREA VISIBILITY */
           <div className="flex gap-2 items-end">
             {micOk && (
               <button
@@ -313,9 +313,9 @@ export default function FluxChat() {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg() } }}
               placeholder={listening ? '🎙️ Listening…' : 'Talk to Flux…'}
               rows={1}
-              className="flex-1 bg-white/8 border border-white/12 focus:border-cyan-400/60 rounded-2xl
-                         px-4 py-3 text-white text-sm outline-none resize-none placeholder-white/25
-                         leading-relaxed transition-colors"
+              className="flex-1 bg-gray-800 border border-gray-600 focus:border-cyan-400 rounded-2xl
+                         px-4 py-3 text-white text-sm outline-none resize-none
+                         leading-relaxed transition-colors placeholder-gray-400"
               style={{ minHeight: '44px', maxHeight: '120px' }}
             />
 
@@ -324,7 +324,7 @@ export default function FluxChat() {
               disabled={!input.trim() || loading}
               className="w-11 h-11 rounded-2xl bg-cyan-500 hover:bg-cyan-400 flex items-center justify-center
                          text-white disabled:opacity-30 active:scale-90 transition-all flex-shrink-0
-                         shadow-lg shadow-cyan-500/20 flex-shrink-0">
+                         shadow-lg shadow-cyan-500/20">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
