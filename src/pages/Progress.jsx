@@ -127,7 +127,7 @@ export default function Progress() {
       const streak    = await getStreakCount()
       const brave     = await db.sessions.where('type').equals('brave').count()
       const voluntary = await db.braveStars.count().catch(() => 0)
-      const journal   = await db.journal.count()
+      const journal   = await db.journal.count().catch(() => 0)
       const story     = await db.sessions.where('type').equals('talktales').count()
       const breathe   = await db.sessions.where('type').equals('breathe').count()
       const comm      = await db.sessions.filter(s => s.type?.startsWith('comm_')).count()
