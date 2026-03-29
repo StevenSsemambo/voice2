@@ -204,8 +204,8 @@ export default function VoiceBiomarker() {
               <div className="grid grid-cols-3 gap-2.5">
                 {[
                   { label: 'Sessions',  value: totalSessions,                          color: 'var(--aqua)'   },
-                  { label: 'Avg Fluency',value: fluencyData.length ? `${Math.round(fluencyData.reduce((a,b)=>a+b)/fluencyData.length)}` : '—', color: 'var(--jade)' },
-                  { label: 'Avg WPM',   value: wpmData.length ? `${Math.round(wpmData.reduce((a,b)=>a+b)/wpmData.length)}` : '—', color: 'var(--violet)' },
+                  { label: 'Avg Fluency',value: fluencyData.length ? `${Math.round(fluencyData.reduce((a,b)=>a+b, 0)/fluencyData.length)}` : '—', color: 'var(--jade)' },
+                  { label: 'Avg WPM',   value: wpmData.length ? `${Math.round(wpmData.reduce((a,b)=>a+b, 0)/wpmData.length)}` : '—', color: 'var(--violet)' },
                 ].map((s, i) => (
                   <div key={i} className="card text-center py-4">
                     <div className="font-display font-bold text-xl" style={{ color: s.color }}>{s.value}</div>
@@ -231,8 +231,8 @@ export default function VoiceBiomarker() {
               <div className="card" style={{ borderColor: 'rgba(34,211,238,0.15)' }}>
                 <p className="section-label mb-3">What your voice data shows</p>
                 {fluencyData.length >= 3 && (() => {
-                  const first3avg = fluencyData.slice(0, 3).reduce((a,b)=>a+b) / 3
-                  const last3avg  = fluencyData.slice(-3).reduce((a,b)=>a+b) / 3
+                  const first3avg = fluencyData.slice(0, 3).reduce((a,b)=>a+b, 0) / 3
+                  const last3avg  = fluencyData.slice(-3).reduce((a,b)=>a+b, 0) / 3
                   const change    = last3avg - first3avg
                   const improved  = change > 0
                   return (
