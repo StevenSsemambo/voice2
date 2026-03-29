@@ -39,16 +39,6 @@ function ScoreRing({ score, size = 100, label }) {
         </div>
       </div>
       {label && <span className="text-xs font-display font-semibold" style={{ color }}>{label}</span>}
-      {showCelebration && (
-        <CelebrationScreen
-          sessionType="speech_analysis"
-          score={celebScore}
-          stars={Math.round(celebScore / 10)}
-          ageGroup={profile?.ageGroup || 'explorer'}
-          profile={profile}
-          onDismiss={() => setShowCelebration(false)}
-        />
-      )}
     </div>
   )
 }
@@ -139,6 +129,13 @@ export default function SpeechAnalysisPage() {
   }
 
   const startRecording = async () => {
+    // Guard: check SpeechRecognition support before proceeding
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) {
+      alert('Speech recognition is not supported in this browser. Please use Chrome or Safari.')
+      return
+    }
+
     const micOk = await setupMic()
     setRecording(true); setElapsed(0); setTranscript(''); setLiveAnalysis(null)
     setStage('recording')
@@ -423,7 +420,7 @@ export default function SpeechAnalysisPage() {
                 <p className="section-label mb-1.5">Flux says</p>
                 {loadingAI
                   ? <div className="flex gap-1">{[0,1,2].map(i=><div key={i} className="w-2 h-2 rounded-full bg-white/20 animate-bounce" style={{animationDelay:`${i*0.15}s`}}/>)}</div>
-                  : <p className="text-white/75 text-sm leading-relaxed">{aiFeedback || getOfflineResponse('encouragement')}</p>
+                  : <p className="text-white/75 text-sm leading-relaxed">{aiFeedback || getOfflineResponse('encouragement', profile)}</p>
                 }
               </div>
             </div>
@@ -443,6 +440,18 @@ export default function SpeechAnalysisPage() {
             <button onClick={() => navigate('/home')}
               className="btn-aqua flex-1 font-display" style={{ color: '#05080f' }}>Home</button>
           </div>
+
+          {/* Celebration overlay — placed here in the done section where state is in scope */}
+          {showCelebration && (
+            <CelebrationScreen
+              sessionType="speech_analysis"
+              score={celebScore}
+              stars={Math.round(celebScore / 10)}
+              ageGroup={profile?.ageGroup || 'explorer'}
+              profile={profile}
+              onDismiss={() => setShowCelebration(false)}
+            />
+          )}
         </div>
       )}
     </div>
