@@ -103,7 +103,7 @@ export default function Journal() {
       await addJournalEntry(audioBlob, duration, selectedMood?.id || 'okay')
       await markTodayStreak()
       await refreshProfile()
-      triggerFlux(getOfflineResponse('celebration'))
+      triggerFlux(getOfflineResponse('celebration', profile))
       const e = await getJournalEntries()
       setEntries(e)
       setStage('done')
@@ -136,7 +136,7 @@ export default function Journal() {
         <div className="px-5">
           <div className="flex flex-col items-center mb-6">
             <Flux size={80} ageGroup={profile?.ageGroup || 'explorer'} mood="happy" floating
-              showMessage message={getOfflineResponse('journal_prompts')} />
+              showMessage message={getOfflineResponse('journal_prompts', profile)} />
           </div>
 
           <button
@@ -161,9 +161,10 @@ export default function Journal() {
                       <div className="font-display text-white text-sm">Entry #{entries.length - i}</div>
                       <div className="text-white/40 text-xs">{formatDate(entry.date)} · {formatDuration(entry.duration || 0)}</div>
                     </div>
-                    {entry.blob && (
-                      <audio src={URL.createObjectURL(entry.blob)} controls className="h-8 max-w-[120px]" />
-                    )}
+                    {entry.blob && (() => {
+                      try { return <audio src={URL.createObjectURL(entry.blob)} controls className="h-8 max-w-[120px]" /> }
+                      catch { return null }
+                    })()}
                   </div>
                 ))}
               </div>
