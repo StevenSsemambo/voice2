@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── EMOTIONAL STATE SCHEMA ───────────────────────────────────────────────────
 // Every session starts by building this object
