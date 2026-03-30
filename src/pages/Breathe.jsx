@@ -28,21 +28,29 @@ export default function Breathe() {
   const [phaseIdx, setPhaseIdx] = useState(0)
   const [cycles, setCycles] = useState(0)
   const [progress, setProgress] = useState(0)
-  const [fluxMsg, setFluxMsg] = useState(getOfflineResponse('breathing',profile))
+  const [fluxMsg, setFluxMsg] = useState('')
   const [done, setDone] = useState(false)
   const [micLevel, setMicLevel] = useState(0)
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [celebScore, setCelebScore] = useState(0)
 
   const timerRef = useRef(null)
   const progressRef = useRef(null)
   const audioCtxRef = useRef(null)
   const analyserRef = useRef(null)
   const micRef = useRef(null)
-  const [showCelebration, setShowCelebration] = useState(false)
-  const [celebScore, setCelebScore] = useState(0)
+  const animationRef = useRef(null) // Added for animation frame
+  
   const navigate = useNavigate()
   const { fluxSay, fluxStop, fluxSpeaking } = useFluxVoice()
-  const { triggerFlux, refreshProfile } = useApp()
+  const { triggerFlux, refreshProfile, profile } = useApp() // Added profile from useApp
   const TARGET_CYCLES = 5
+
+  // Initialize flux message
+  useEffect(() => {
+    const initialMsg = getOfflineResponse('breathing', profile)
+    setFluxMsg(initialMsg)
+  }, [profile])
 
   // Mic setup
   const startMic = useCallback(async () => {
@@ -61,32 +69,66 @@ export default function Breathe() {
         analyserRef.current.getByteFrequencyData(data)
         const avg = data.reduce((a, b) => a + b, 0) / data.length
         setMicLevel(Math.min(avg / 30, 1))
-        requestAnimationFrame(detectLevel)
+        animationRef.current = requestAnimationFrame(detectLevel)
       }
       detectLevel()
-    } catch { /* mic not available */ }
+    } catch (err) {
+      console.error('Mic not available:', err)
+    }
   }, [])
 
   const stopMic = useCallback(() => {
-    micRef.current?.getTracks().forEach(t => t.stop())
-    audioCtxRef.current?.close()
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+      animationRef.current = null
+    }
+    if (micRef.current) {
+      micRef.current.getTracks().forEach(t => t.stop())
+      micRef.current = null
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close()
+      audioCtxRef.current = null
+    }
     analyserRef.current = null
   }, [])
 
-  // Breathing cycle
+  // Finish session function
+  const finishSession = useCallback(async () => {
+    setRunning(false)
+    setDone(true)
+    stopMic()
+    try {
+      await addSession('breathe', 30, { duration: 180, cycles: TARGET_CYCLES })
+      await markTodayStreak()
+      await refreshProfile()
+      haptics.sessionDone()
+      setShowCelebration(true)
+      const celebrationMsg = getOfflineResponse('celebration', profile)
+      triggerFlux(celebrationMsg)
+    } catch (err) {
+      console.error('Error finishing session:', err)
+    }
+  }, [stopMic, refreshProfile, triggerFlux, profile])
+
+  // Breathing cycle effect
   useEffect(() => {
-    if (!running) return
+    if (!running || !selectedEx) return
+    
     const phase = PHASES[phaseIdx]
     let elapsed = 0
     const interval = 50
 
     progressRef.current = setInterval(() => {
       elapsed += interval
-      setProgress(elapsed / phase.duration)
+      const newProgress = Math.min(elapsed / phase.duration, 1)
+      setProgress(newProgress)
+      
       if (elapsed >= phase.duration) {
         clearInterval(progressRef.current)
         const next = (phaseIdx + 1) % PHASES.length
         setPhaseIdx(next)
+        
         if (next === 0) {
           const newCycles = cycles + 1
           setCycles(newCycles)
@@ -97,33 +139,29 @@ export default function Breathe() {
       }
     }, interval)
 
-    return () => clearInterval(progressRef.current)
-  }, [running, phaseIdx, cycles])
+    return () => {
+      if (progressRef.current) {
+        clearInterval(progressRef.current)
+      }
+    }
+  }, [running, phaseIdx, cycles, selectedEx, finishSession])
 
-  const finishSession = async () => {
-    setRunning(false)
-    setDone(true)
-    stopMic()
-    await addSession('breathe', 30, { duration: 180, cycles: TARGET_CYCLES })
-    await markTodayStreak()
-    await refreshProfile()
-    haptics.sessionDone()
-    setShowCelebration(true)
-    triggerFlux(getOfflineResponse('celebration',profile))
-  }
-
-  const startExercise = async (ex) => {
+  const startExercise = useCallback(async (ex) => {
     setSelectedEx(ex)
     setRunning(true)
     setCycles(0)
     setPhaseIdx(0)
     setProgress(0)
     setDone(false)
-    const bMsg = getOfflineResponse('breathing',profile); setFluxMsg(bMsg); fluxSay(bMsg, true)
+    const bMsg = getOfflineResponse('breathing', profile)
+    setFluxMsg(bMsg)
+    if (fluxSay) {
+      fluxSay(bMsg, true)
+    }
     await startMic()
-  }
+  }, [profile, fluxSay, startMic])
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setRunning(false)
     setSelectedEx(null)
     setCycles(0)
@@ -131,17 +169,45 @@ export default function Breathe() {
     setProgress(0)
     setDone(false)
     stopMic()
-  }
+  }, [stopMic])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopMic()
+      if (progressRef.current) {
+        clearInterval(progressRef.current)
+      }
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
+    }
+  }, [stopMic])
 
   const phase = PHASES[phaseIdx]
   const circleSize = 200
-  const circleScale = running ? (phaseIdx === 0 ? 1 + progress * 0.4 : phaseIdx === 2 ? 1.4 - progress * 0.4 : PHASES[phaseIdx].scale) : 1
+  const circleScale = running ? (
+    phaseIdx === 0 ? 1 + progress * 0.4 : 
+    phaseIdx === 2 ? 1.4 - progress * 0.4 : 
+    phase?.scale || 1
+  ) : 1
+
+  // Safety check for phase color
+  const phaseColor = phase?.color || '#38bdf8'
+  const phaseLabel = phase?.label || 'Breathe'
+  const phaseInstruction = phase?.instruction || 'Focus on your breath...'
 
   return (
-    <div className="min-h-full pb-24 page-enter">
+    <div className="min-h-full pb-24 page-enter" style={{ background: 'var(--ink)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <button onClick={() => { reset(); navigate(-1) }} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white">←</button>
+      <div className="flex items-center gap-3 px-5 pt-6 pb-4 sticky top-0 z-10" style={{ background: 'var(--ink)' }}>
+        <button 
+          onClick={() => { reset(); navigate(-1) }} 
+          className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
+          style={{ background: 'rgba(255,255,255,0.1)' }}
+        >
+          ←
+        </button>
         <h1 className="font-display text-xl font-bold text-white flex-1">Breathe & Flow</h1>
         <span className="text-2xl">💨</span>
       </div>
@@ -150,7 +216,7 @@ export default function Breathe() {
       {!selectedEx && (
         <div className="px-5">
           <div className="flex flex-col items-center mb-8">
-            <Flux size={90} ageGroup="explorer" mood="calm" floating showMessage message={fluxMsg} />
+            <Flux size={90} ageGroup={profile?.ageGroup || 'explorer'} mood="calm" floating showMessage message={fluxMsg} />
           </div>
           <h2 className="font-display font-semibold text-white/70 text-sm mb-3 uppercase tracking-wider">Choose your game</h2>
           <div className="space-y-3">
@@ -160,6 +226,7 @@ export default function Breathe() {
                 onClick={() => startExercise(ex)}
                 className={`w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r ${ex.color} bg-opacity-20 border border-white/10
                            active:scale-[0.98] transition-transform text-left`}
+                style={{ background: `linear-gradient(135deg, ${ex.color.split(' ')[1]}, ${ex.color.split(' ')[3]})` }}
               >
                 <div className="text-3xl">{ex.icon}</div>
                 <div>
@@ -170,7 +237,7 @@ export default function Breathe() {
               </button>
             ))}
           </div>
-          <div className="mt-6 p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20">
+          <div className="mt-6 p-4 rounded-2xl" style={{ background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.2)' }}>
             <p className="text-aqua text-sm text-center">💡 <strong>Deep breathing</strong> turns down your brain's alarm system and reduces vocal muscle tension before speaking.</p>
           </div>
         </div>
@@ -184,7 +251,10 @@ export default function Breathe() {
           {/* Cycles */}
           <div className="flex gap-2 mb-8">
             {Array.from({ length: TARGET_CYCLES }).map((_, i) => (
-              <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i < cycles ? 'bg-cyan-400 w-6' : 'bg-white/20 w-3'}`} />
+              <div 
+                key={i} 
+                className={`h-2 rounded-full transition-all duration-500 ${i < cycles ? 'bg-cyan-400 w-6' : 'bg-white/20 w-3'}`} 
+              />
             ))}
           </div>
 
@@ -198,7 +268,7 @@ export default function Breathe() {
                 style={{
                   width: circleSize * circleScale * r,
                   height: circleSize * circleScale * r,
-                  borderColor: phase?.color || '#38bdf8',
+                  borderColor: phaseColor,
                   opacity: (0.15 - i * 0.04) * (micLevel > 0.1 ? 1.5 : 1),
                   transition: 'all 4s ease-in-out'
                 }}
@@ -211,14 +281,14 @@ export default function Breathe() {
               style={{
                 width: circleSize * circleScale,
                 height: circleSize * circleScale,
-                background: `radial-gradient(circle, ${phase?.color || '#38bdf8'}30, ${phase?.color || '#38bdf8'}10)`,
-                border: `3px solid ${phase?.color || '#38bdf8'}`,
-                boxShadow: `0 0 40px ${phase?.color || '#38bdf8'}40`
+                background: `radial-gradient(circle, ${phaseColor}30, ${phaseColor}10)`,
+                border: `3px solid ${phaseColor}`,
+                boxShadow: `0 0 40px ${phaseColor}40`
               }}
             >
               <div className="text-center">
-                <div className="font-display text-3xl font-bold" style={{ color: phase?.color || '#38bdf8' }}>
-                  {phase?.label}
+                <div className="font-display text-3xl font-bold" style={{ color: phaseColor }}>
+                  {phaseLabel}
                 </div>
                 {micLevel > 0.05 && <div className="text-white/60 text-xs mt-1">Breathing detected ✓</div>}
               </div>
@@ -227,38 +297,63 @@ export default function Breathe() {
 
           {/* Instruction */}
           <div className="text-center mb-8">
-            <p className="text-white/70 text-lg">{phase?.instruction}</p>
+            <p className="text-white/70 text-lg">{phaseInstruction}</p>
             <p className="text-white/30 text-sm mt-1">Cycle {cycles + 1} of {TARGET_CYCLES}</p>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full max-w-xs progress-bar mb-6">
-            <div
-              className="progress-fill transition-all duration-100"
-              style={{ width: `${((cycles + progress) / TARGET_CYCLES) * 100}%`, background: `linear-gradient(90deg, ${phase?.color}, ${phase?.color}80)` }}
-            />
+          <div className="w-full max-w-xs mb-6">
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+              <div
+                className="h-full transition-all duration-100"
+                style={{ 
+                  width: `${((cycles + progress) / TARGET_CYCLES) * 100}%`, 
+                  background: `linear-gradient(90deg, ${phaseColor}, ${phaseColor}80)`,
+                  borderRadius: '2px'
+                }}
+              />
+            </div>
           </div>
 
-          <button onClick={reset} className="btn-ghost text-sm py-2 px-4">Stop Exercise</button>
+          <button 
+            onClick={reset} 
+            className="px-4 py-2 rounded-xl text-sm transition-all active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}
+          >
+            Stop Exercise
+          </button>
         </div>
       )}
 
       {/* Done State */}
       {done && (
         <div className="flex flex-col items-center px-5 py-8 gap-6 text-center">
-          <Flux size={120} ageGroup="explorer" mood="excited" floating />
+          <Flux size={120} ageGroup={profile?.ageGroup || 'explorer'} mood="excited" floating />
           <div>
             <div className="text-5xl mb-4">🎉</div>
             <h2 className="font-display text-2xl font-bold text-white mb-2">Amazing breathing!</h2>
             <p className="text-white/60">You completed {TARGET_CYCLES} breathing cycles. Your vocal muscles are relaxed and ready. +30 Brave Stars!</p>
           </div>
           <div className="flex gap-3 w-full">
-            <button onClick={() => startExercise(selectedEx)} className="btn-ghost flex-1">Go Again</button>
-            <button onClick={() => { reset(); navigate('/home') }} className="btn-aqua flex-1">Back Home</button>
+            <button 
+              onClick={() => startExercise(selectedEx)} 
+              className="flex-1 py-3 rounded-xl text-sm transition-all active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}
+            >
+              Go Again
+            </button>
+            <button 
+              onClick={() => { reset(); navigate('/home') }} 
+              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+              style={{ background: 'var(--aqua)', color: '#05080f' }}
+            >
+              Back Home
+            </button>
           </div>
         </div>
       )}
-      {showCelebration && (
+      
+      {showCelebration && profile && (
         <CelebrationScreen
           sessionType="breathe"
           score={celebScore}
