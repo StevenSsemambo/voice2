@@ -11,13 +11,14 @@ import { FloatingReader } from './components/ui/ReadAloud'
 
 // Pages
 // Add to src/App.jsx imports — with the other page imports
-import SoulModel              from './ai/SoulModel'
-import EmotionalEngine        from './ai/EmotionalEngine'
-import MemoryEngine           from './ai/MemoryEngine'
-import AdaptiveCoaching       from './ai/AdaptiveCoaching'
-import TherapeuticEngine      from './ai/TherapeuticEngine'
-import StutteringIntelligence from './ai/StutteringIntelligence'
-import GrowthNarrative        from './ai/GrowthNarrative'
+
+import SoulModel              from './ai/YoSpeech-SoulModel'
+import EmotionalEngine        from './ai/YoSpeech-EmotionalEngine'
+import MemoryEngine           from './ai/YoSpeech-MemoryEngine'
+import AdaptiveCoaching       from './ai/YoSpeech-AdaptiveCoaching'
+import TherapeuticEngine      from './ai/YoSpeech-TherapeuticEngine'
+import StutteringIntelligence from './ai/YoSpeech-StutteringIntelligence'
+import GrowthNarrative        from './ai/YoSpeech-GrowthNarrative'
 import Splash         from './pages/Splash'
 import Auth           from './pages/Auth'
 import Onboarding     from './pages/Onboarding'
