@@ -105,12 +105,11 @@ function scoreEmotionalIntensity(text) {
     if (lower.includes(word)) score += 0.5;
   });
   if (text.includes("!")) score += 0.3;
-  if (text.length > 200) score += 0.5; // long message = more emotion
+  if (text.length > 200) score += 0.5;
   return Math.min(score, 5);
 }
 
 // ─── VALIDATION LIBRARY ───────────────────────────────────────────────────────
-// Validation always comes first. Never skip this.
 const VALIDATIONS = {
   shame: [
     "That feeling of shame after stuttering — it's one of the heaviest things a person can carry. And it makes complete sense that you feel it.",
@@ -231,7 +230,6 @@ function generateGuidance(intents, soul, emotionalReading, memoryAnalysis) {
   const personality = soul?.communicationPersonality;
   const name = soul?.name || "you";
 
-  // Don't give guidance in crisis or low states — just hold space
   if (state === "crisis" || state === "low") {
     return "For now, I just want you to breathe. No exercises. No goals. Just exist here for a moment. We'll work when you're ready.";
   }
@@ -294,11 +292,9 @@ function buildTherapeuticResponse(userInput, soul, emotionalReading, memoryAnaly
     };
   }
 
-  // Pick validation
   const validationPool = VALIDATIONS[topIntent] || VALIDATIONS.seeking_advice;
   const validation = validationPool[Math.floor(Math.random() * validationPool.length)];
 
-  // Pick reframe (only if state allows it and not in crisis)
   let reframe = null;
   if (!["crisis", "low"].includes(state)) {
     const reframePool = REFRAMES[topIntent];
@@ -307,7 +303,6 @@ function buildTherapeuticResponse(userInput, soul, emotionalReading, memoryAnaly
     }
   }
 
-  // Second intent bridge
   let bridge = null;
   if (secondIntent && secondIntent !== topIntent) {
     const bridgeMap = {
@@ -320,7 +315,6 @@ function buildTherapeuticResponse(userInput, soul, emotionalReading, memoryAnaly
     bridge = bridgeMap[`${topIntent}+${secondIntent}`] || null;
   }
 
-  // Memory reference injection
   let memoryRef = null;
   if (memoryAnalysis?.references?.length) {
     const relevant = memoryAnalysis.references.find(r =>
@@ -330,10 +324,8 @@ function buildTherapeuticResponse(userInput, soul, emotionalReading, memoryAnaly
     if (relevant) memoryRef = relevant.text;
   }
 
-  // Guidance
   const guidance = generateGuidance(intents, soul, emotionalReading, memoryAnalysis);
 
-  // Assemble full response
   const parts = [];
   if (validation) parts.push(validation);
   if (bridge) parts.push(bridge);
@@ -351,166 +343,6 @@ function buildTherapeuticResponse(userInput, soul, emotionalReading, memoryAnaly
     intensity,
     fullResponse: parts.join("\n\n"),
   };
-}
-
-// ─── SOCRATIC QUESTION GENERATOR ─────────────────────────────────────────────
-// Sometimes the therapist asks rather than tells
-const SOCRATIC_QUESTIONS = {
-  shame: [
-    "If a close friend described exactly what happened to you today, would you judge them as harshly as you're judging yourself?",
-    "When did you first start feeling this way about your speech? What was happening in your life then?",
-    "What would it feel like to speak and not care what anyone thought? Can you imagine that, even briefly?",
-  ],
-  hopelessness: [
-    "Has there ever been a time — even a small moment — when speaking felt different? What was different about that moment?",
-    "When you say 'it will never get better', what would have to happen for you to believe it could?",
-    "What would you say to someone else who told you exactly what you just told me?",
-  ],
-  avoidance: [
-    "What do you imagine happening in that situation that makes you want to avoid it? Walk me through the scene in your head.",
-    "What's the worst realistic outcome if you don't avoid it? And what would you do then?",
-    "What has avoidance cost you — not today, but over time?",
-  ],
-  fear: [
-    "What specifically are you afraid people will think or do? Let's name it precisely.",
-    "How many times has that fear come true exactly as you imagined? And how many times has it been different?",
-    "What would you be doing differently right now if the fear were just a little smaller?",
-  ],
-  existential: [
-    "If you woke up tomorrow and no longer stuttered, what would be different about who you are as a person?",
-    "What has your stutter taught you about people — about who is worth your time and who isn't?",
-    "Is there anything about how you communicate — the depth, the care, the thoughtfulness — that you think exists partly because of what you've been through?",
-  ],
-};
-
-function getSocraticQuestion(intents, soul) {
-  const topIntent = intents[0]?.intent;
-  const pool = SOCRATIC_QUESTIONS[topIntent];
-  if (!pool) return null;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// ─── RESPONSE MODE SELECTOR ───────────────────────────────────────────────────
-// Decides whether to give a full response or just a Socratic question
-function selectResponseMode(intents, emotionalReading, messageCount) {
-  const state = emotionalReading?.derivedState || "steady";
-  const topIntent = intents[0]?.intent;
-
-  // Always full response for crisis
-  if (state === "crisis") return "hold_space";
-
-  // Alternate Socratic every 3 messages for deep intents
-  const deepIntents = ["shame", "hopelessness", "existential", "fear", "avoidance"];
-  if (deepIntents.includes(topIntent) && messageCount % 3 === 0) return "socratic";
-
-  // Default: full therapeutic response
-  return "full";
-}
-
-// ─── CHAT MESSAGE COMPONENT ───────────────────────────────────────────────────
-function Message({ msg, isNew }) {
-  return (
-    <div style={{
-      display: "flex",
-      justifyContent: msg.from === "user" ? "flex-end" : "flex-start",
-      animation: isNew ? "fadeSlideIn 0.4s ease" : "none",
-      marginBottom: 16,
-    }}>
-      {msg.from === "therapist" && (
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%",
-          background: "linear-gradient(135deg, #6366f1, #10b981)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 14, marginRight: 10, flexShrink: 0, marginTop: 4,
-        }}>🎙️</div>
-      )}
-      <div style={{ maxWidth: "80%", display: "flex", flexDirection: "column", gap: 4 }}>
-        {/* Intent tags for therapist responses */}
-        {msg.from === "therapist" && msg.intents?.length > 0 && (
-          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 4 }}>
-            {msg.intents.slice(0, 2).map((intent, i) => (
-              <span key={i} style={{
-                padding: "2px 8px",
-                background: "rgba(99,102,241,0.1)",
-                border: "1px solid rgba(99,102,241,0.2)",
-                borderRadius: 8, color: "#818cf8",
-                fontSize: 10, letterSpacing: "0.04em",
-              }}>{intent.intent}</span>
-            ))}
-          </div>
-        )}
-        <div style={{
-          padding: "14px 18px",
-          borderRadius: msg.from === "user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
-          background: msg.from === "user"
-            ? "linear-gradient(135deg, #6366f1, #4f46e5)"
-            : "rgba(255,255,255,0.04)",
-          border: msg.from === "user" ? "none" : "1px solid rgba(255,255,255,0.07)",
-          color: msg.from === "user" ? "#fff" : "#cbd5e1",
-          fontSize: 14, lineHeight: 1.75,
-          backdropFilter: "blur(8px)",
-          boxShadow: msg.from === "user"
-            ? "0 4px 16px rgba(99,102,241,0.25)"
-            : "0 2px 10px rgba(0,0,0,0.2)",
-          whiteSpace: "pre-wrap",
-        }}>
-          {msg.text}
-        </div>
-        {/* Response anatomy breakdown */}
-        {msg.from === "therapist" && msg.anatomy && (
-          <div style={{
-            marginTop: 4,
-            padding: "10px 14px",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.05)",
-            borderRadius: 10,
-          }}>
-            <div style={{ color: "#334155", fontSize: 10, letterSpacing: "0.06em", marginBottom: 6 }}>
-              RESPONSE ANATOMY
-            </div>
-            {Object.entries(msg.anatomy).filter(([, v]) => v).map(([key, val]) => (
-              <div key={key} style={{ display: "flex", gap: 8, marginBottom: 4 }}>
-                <span style={{
-                  color: "#1e293b", fontSize: 10, letterSpacing: "0.04em",
-                  width: 70, flexShrink: 0, paddingTop: 1,
-                }}>{key.toUpperCase()}</span>
-                <span style={{ color: "#334155", fontSize: 11, lineHeight: 1.5 }}>
-                  {String(val).slice(0, 80)}{String(val).length > 80 ? "…" : ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── INTENSITY INDICATOR ─────────────────────────────────────────────────────
-function IntensityMeter({ value }) {
-  const levels = [
-    { threshold: 1.5, label: "Neutral", color: "#64748b" },
-    { threshold: 2.5, label: "Mild", color: "#60a5fa" },
-    { threshold: 3.5, label: "Moderate", color: "#fbbf24" },
-    { threshold: 4.5, label: "High", color: "#f97316" },
-    { threshold: 6,   label: "Intense", color: "#f87171" },
-  ];
-  const level = levels.find(l => value <= l.threshold) || levels[levels.length - 1];
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ color: "#334155", fontSize: 11 }}>Intensity</span>
-      <div style={{ display: "flex", gap: 3 }}>
-        {[1, 2, 3, 4, 5].map(n => (
-          <div key={n} style={{
-            width: 16, height: 4, borderRadius: 2,
-            background: n <= Math.round(value) ? level.color : "rgba(255,255,255,0.08)",
-            transition: "background 0.4s",
-          }} />
-        ))}
-      </div>
-      <span style={{ color: level.color, fontSize: 11 }}>{level.label}</span>
-    </div>
-  );
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
@@ -532,7 +364,6 @@ export default function TherapeuticResponseEngine({
   const name = soul?.name || "there";
 
   useEffect(() => {
-    // Opening message shaped by emotional state
     const openings = {
       crisis: `I'm here, ${name}. Whatever you need to say — say it. This is a safe space.`,
       low: `${name}, I'm glad you're here. Take your time. There's no agenda today.`,
@@ -564,7 +395,7 @@ export default function TherapeuticResponseEngine({
 
     const intents = detectIntents(userText);
     const intensity = scoreEmotionalIntensity(userText);
-    const mode = selectResponseMode(intents, emotionalReading, messageCount);
+    const mode = "full"; // Simplified for now
 
     setLastIntensity(intensity);
     setLastIntents(intents);
@@ -574,25 +405,16 @@ export default function TherapeuticResponseEngine({
       let responseText = "";
       let anatomy = null;
 
-      if (mode === "hold_space") {
-        responseText = `I hear you, ${name}. I'm not going anywhere. Take all the time you need.`;
-        anatomy = { mode: "hold space", note: "Crisis state — no advice, no reframe" };
-      } else if (mode === "socratic") {
-        const question = getSocraticQuestion(intents, soul);
-        responseText = question || "Tell me more about what's happening for you right now.";
-        anatomy = { mode: "socratic", intent: intents[0]?.intent, question: responseText };
-      } else {
-        const response = buildTherapeuticResponse(userText, soul, emotionalReading, memoryAnalysis);
-        responseText = response.fullResponse;
-        anatomy = {
-          mode: "full therapeutic",
-          detected: intents.slice(0, 2).map(i => i.intent).join(", "),
-          validation: response.validation?.slice(0, 60),
-          reframe: response.reframe?.slice(0, 60),
-          guidance: response.guidance?.slice(0, 60),
-          memory: response.memoryRef?.slice(0, 60),
-        };
-      }
+      const response = buildTherapeuticResponse(userText, soul, emotionalReading, memoryAnalysis);
+      responseText = response.fullResponse;
+      anatomy = {
+        mode: "full therapeutic",
+        detected: intents.slice(0, 2).map(i => i.intent).join(", "),
+        validation: response.validation?.slice(0, 60),
+        reframe: response.reframe?.slice(0, 60),
+        guidance: response.guidance?.slice(0, 60),
+        memory: response.memoryRef?.slice(0, 60),
+      };
 
       setMessages(prev => [...prev, {
         from: "therapist",
@@ -603,13 +425,12 @@ export default function TherapeuticResponseEngine({
         _anatomy: anatomy,
       }]);
       setMessageCount(c => c + 1);
-    }, 1400 + Math.random() * 600); // Natural varied delay
+    }, 1400 + Math.random() * 600);
   }
 
   function toggleAnatomy() {
     setShowAnatomy(prev => {
       const next = !prev;
-      // Update existing messages to show/hide anatomy
       setMessages(msgs => msgs.map(m =>
         m.from === "therapist"
           ? { ...m, anatomy: next ? m._anatomy : null }
@@ -635,21 +456,35 @@ export default function TherapeuticResponseEngine({
       fontFamily: "'Georgia', 'Times New Roman', serif",
       display: "flex", flexDirection: "column",
       position: "relative",
+      paddingBottom: "100px", // ADDED: Space for bottom nav
     }}>
 
-      {/* Ambient */}
+      {/* Ambient effect */}
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
         background: "radial-gradient(ellipse 55% 40% at 25% 25%, rgba(99,102,241,0.05) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
 
-      {/* Header */}
+      {/* Header with back button */}
       <div style={{
-        padding: "24px 24px 0",
+        padding: "20px 24px 0",
         maxWidth: 680, margin: "0 auto", width: "100%",
         display: "flex", alignItems: "center", gap: 12,
+        position: "sticky", top: 0, zIndex: 10,
+        background: "linear-gradient(to bottom, #07080f 0%, #07080f 80%, transparent)",
       }}>
+        <button 
+          onClick={() => window.history.back()}
+          style={{
+            width: 40, height: 40, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18, cursor: "pointer", color: "#94a3b8",
+            transition: "all 0.2s",
+          }}
+        >←</button>
         <div style={{
           width: 42, height: 42, borderRadius: "50%",
           background: "linear-gradient(135deg, #6366f1, #10b981)",
@@ -663,7 +498,23 @@ export default function TherapeuticResponseEngine({
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-          {lastIntensity && <IntensityMeter value={lastIntensity} />}
+          {lastIntensity && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "#334155", fontSize: 11 }}>Intensity</span>
+              <div style={{ display: "flex", gap: 3 }}>
+                {[1, 2, 3, 4, 5].map(n => {
+                  const colors = ["#64748b", "#60a5fa", "#fbbf24", "#f97316", "#f87171"];
+                  return (
+                    <div key={n} style={{
+                      width: 16, height: 4, borderRadius: 2,
+                      background: n <= Math.round(lastIntensity) ? colors[Math.min(4, Math.max(0, Math.round(lastIntensity) - 1))] : "rgba(255,255,255,0.08)",
+                      transition: "background 0.4s",
+                    }} />
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <button
             onClick={toggleAnatomy}
             style={{
@@ -705,11 +556,81 @@ export default function TherapeuticResponseEngine({
       <div style={{
         flex: 1,
         maxWidth: 680, margin: "0 auto", width: "100%",
-        padding: "24px 24px 180px",
+        padding: "24px 24px 120px", // INCREASED bottom padding
         overflowY: "auto",
       }}>
         {messages.map((msg, i) => (
-          <Message key={msg.id} msg={msg} isNew={i === messages.length - 1} />
+          <div key={msg.id} style={{
+            display: "flex",
+            justifyContent: msg.from === "user" ? "flex-end" : "flex-start",
+            animation: i === messages.length - 1 ? "fadeSlideIn 0.4s ease" : "none",
+            marginBottom: 16,
+          }}>
+            {msg.from === "therapist" && (
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "linear-gradient(135deg, #6366f1, #10b981)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, marginRight: 10, flexShrink: 0, marginTop: 4,
+              }}>🎙️</div>
+            )}
+            <div style={{ maxWidth: "80%", display: "flex", flexDirection: "column", gap: 4 }}>
+              {msg.from === "therapist" && msg.intents?.length > 0 && (
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 4 }}>
+                  {msg.intents.slice(0, 2).map((intent, i) => (
+                    <span key={i} style={{
+                      padding: "2px 8px",
+                      background: "rgba(99,102,241,0.1)",
+                      border: "1px solid rgba(99,102,241,0.2)",
+                      borderRadius: 8, color: "#818cf8",
+                      fontSize: 10, letterSpacing: "0.04em",
+                    }}>{intent.intent}</span>
+                  ))}
+                </div>
+              )}
+              <div style={{
+                padding: "14px 18px",
+                borderRadius: msg.from === "user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                background: msg.from === "user"
+                  ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                  : "rgba(255,255,255,0.04)",
+                border: msg.from === "user" ? "none" : "1px solid rgba(255,255,255,0.07)",
+                color: msg.from === "user" ? "#fff" : "#cbd5e1",
+                fontSize: 14, lineHeight: 1.75,
+                backdropFilter: "blur(8px)",
+                boxShadow: msg.from === "user"
+                  ? "0 4px 16px rgba(99,102,241,0.25)"
+                  : "0 2px 10px rgba(0,0,0,0.2)",
+                whiteSpace: "pre-wrap",
+              }}>
+                {msg.text}
+              </div>
+              {msg.from === "therapist" && msg.anatomy && (
+                <div style={{
+                  marginTop: 4,
+                  padding: "10px 14px",
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  borderRadius: 10,
+                }}>
+                  <div style={{ color: "#334155", fontSize: 10, letterSpacing: "0.06em", marginBottom: 6 }}>
+                    RESPONSE ANATOMY
+                  </div>
+                  {Object.entries(msg.anatomy).filter(([, v]) => v).map(([key, val]) => (
+                    <div key={key} style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+                      <span style={{
+                        color: "#1e293b", fontSize: 10, letterSpacing: "0.04em",
+                        width: 70, flexShrink: 0, paddingTop: 1,
+                      }}>{key.toUpperCase()}</span>
+                      <span style={{ color: "#334155", fontSize: 11, lineHeight: 1.5 }}>
+                        {String(val).slice(0, 80)}{String(val).length > 80 ? "…" : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         ))}
 
         {isTyping && (
@@ -736,7 +657,6 @@ export default function TherapeuticResponseEngine({
           </div>
         )}
 
-        {/* Quick prompts — only at start */}
         {messages.length <= 1 && !isTyping && (
           <div style={{ marginTop: 8 }}>
             <div style={{ color: "#1e293b", fontSize: 11, letterSpacing: "0.05em", marginBottom: 10 }}>
@@ -776,12 +696,13 @@ export default function TherapeuticResponseEngine({
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input - Fixed at bottom but above nav */}
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        padding: "16px 24px 32px",
-        background: "linear-gradient(to top, #07080f 65%, transparent)",
+        position: "fixed", bottom: "70px", left: 0, right: 0, // Positioned above bottom nav
+        padding: "16px 24px 16px",
+        background: "linear-gradient(to top, #07080f 0%, transparent)",
         display: "flex", justifyContent: "center",
+        zIndex: 20,
       }}>
         <div style={{ width: "100%", maxWidth: 680 }}>
           <div style={{ display: "flex", gap: 10 }}>
