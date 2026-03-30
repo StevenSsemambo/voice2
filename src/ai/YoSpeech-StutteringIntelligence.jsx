@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── STUTTERING KNOWLEDGE BASE ────────────────────────────────────────────────
 // The most comprehensive offline stutter intelligence ever built into an app
