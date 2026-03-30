@@ -10,6 +10,14 @@ import DailyCheckIn, { useCheckIn } from './components/ui/DailyCheckIn'
 import { FloatingReader } from './components/ui/ReadAloud'
 
 // Pages
+// Add to src/App.jsx imports — with the other page imports
+import SoulModel              from './ai/SoulModel'
+import EmotionalEngine        from './ai/EmotionalEngine'
+import MemoryEngine           from './ai/MemoryEngine'
+import AdaptiveCoaching       from './ai/AdaptiveCoaching'
+import TherapeuticEngine      from './ai/TherapeuticEngine'
+import StutteringIntelligence from './ai/StutteringIntelligence'
+import GrowthNarrative        from './ai/GrowthNarrative'
 import Splash         from './pages/Splash'
 import Auth           from './pages/Auth'
 import Onboarding     from './pages/Onboarding'
@@ -142,6 +150,14 @@ export default function App() {
               <Route path="/brave-wall"    element={<RequireProfile><BraveWall /></RequireProfile>} />
               <Route path="/biomarker"     element={<RequireProfile><VoiceBiomarker /></RequireProfile>} />
               <Route path="/weekly-report" element={<RequireProfile><WeeklyReport /></RequireProfile>} />
+              <Route path="/soul-setup"   element={<RequireProfile><SoulModel onComplete={() => navigate('/ai-checkin')} /></RequireProfile>} />
+              <Route path="/ai-checkin"   element={<RequireProfile><EmotionalEngine onReadingComplete={() => navigate('/ai-memory')} /></RequireProfile>} />
+              <Route path="/ai-memory"    element={<RequireProfile><MemoryEngine onMemoryLoaded={() => navigate('/ai-coaching')} /></RequireProfile>} />
+              <Route path="/ai-coaching"  element={<RequireProfile><AdaptiveCoaching onSessionComplete={() => navigate('/ai-story')} /></RequireProfile>} />
+              <Route path="/ai-therapy"   element={<RequireProfile><TherapeuticEngine /></RequireProfile>} />
+              <Route path="/ai-stutter"   element={<RequireProfile><StutteringIntelligence /></RequireProfile>} />
+              <Route path="/ai-story"     element={<RequireProfile><GrowthNarrative onComplete={() => navigate('/home')} /></RequireProfile>} />
+
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
