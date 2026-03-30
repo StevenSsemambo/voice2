@@ -50,6 +50,30 @@ db.version(2).stores({
   userState:       '++id, &key, value, updatedAt',       // psychological profile cache
   conversationLog: '++id, role, message, timestamp',     // chat history
 })
+// ─── VERSION 3: YoSpeech AI — Soul Model + Emotional Readings + AI Sessions ──
+db.version(3).stores({
+  profile:         '++id, name, ageGroup, avatar, createdAt',
+  sessions:        '++id, type, date, duration, score, data',
+  recordings:      '++id, type, date, blob, duration, label',
+  fearLadder:      '++id, situation, fearLevel, completed, completedAt',
+  progress:        '++id, zone, mission, stars, date',
+  journal:         '++id, date, blob, duration, mood',
+  braveStars:      '++id, type, description, date',
+  streaks:         '++id, date, completed',
+  settings:        '++id, &key, value',
+  speechAnalysis:  '++id, date, sessionType, wpm, fillerCount, fluencyScore',
+  actSessions:     '++id, sessionNum, date, completed',
+  braveWall:       '++id, date, situation, anonymous',
+  weeklyReports:   '++id, weekStart, generatedAt',
+  dafSessions:     '++id, date, delayMs, duration',
+  userState:       '++id, &key, value, updatedAt',
+  conversationLog: '++id, role, message, timestamp',
+
+  // ── NEW v3 tables ──
+  soulModel:         '++id, createdAt, onboardingComplete',
+  emotionalReadings: '++id, timestamp, derivedState',
+  aiSessions:        '++id, date, emotionalState, streak',
+})
 
 // ─── CORE HELPERS ─────────────────────────────────────────────────────────────
 export const getProfile  = () => db.profile.orderBy('id').last()
