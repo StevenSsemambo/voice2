@@ -4,7 +4,7 @@ import { useApp } from '../hooks/useAppContext'
 import Flux from '../components/flux/Flux'
 import { getOfflineResponse, detectContext, getPersonalizedRecommendation } from '../ai/fluxEngine'
 import { getTotalSessions, getStreakCount, getRecentSessions } from '../utils/db'
-import { db } from '../utils/db' // Added db import for checking soul model
+import { db } from '../utils/db'
 import useFluxVoice from '../hooks/useFluxVoice'
 import { haptics } from '../utils/haptics'
 import { generateDailyMission, isDailyMissionDone } from '../ai/dailyMission'
@@ -37,7 +37,7 @@ export default function Home() {
   const [moodPattern,  setMoodPattern]  = useState(null)
   const [fluxStage,    setFluxStage]    = useState(null)
   const [ptr,         setPtr]         = useState(false)
-  const [startingAI,  setStartingAI]  = useState(false) // Loading state for AI session
+  const [startingAI,  setStartingAI]  = useState(false)
   const ptrStartRef = useRef(0)
 
   const { profile, refreshProfile, streak: ctxStreak, streakAtRisk } = useApp()
@@ -240,33 +240,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* AI Therapy Session Button - NEW */}
-      <div className="px-5 mb-5 animate-slide-up stagger-3">
-        <button
-          onClick={startAISession}
-          disabled={startingAI}
-          className="w-full p-5 rounded-2xl text-left transition-all active:scale-[0.98] relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(16,185,129,0.1))',
-            border: '1px solid rgba(99,102,241,0.25)',
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer pointer-events-none" />
-          <div className="relative flex items-start gap-3">
-            <div className="text-3xl">{startingAI ? '⏳' : '🧠'}</div>
-            <div className="flex-1">
-              <div className="text-white font-display font-bold text-base mb-1">
-                {startingAI ? 'Loading AI Session...' : 'AI Therapy Session'}
-              </div>
-              <div className="text-white/50 text-sm">
-                {startingAI ? 'Preparing your personalised coaching...' : 'Personalised coaching · fully offline · 10-15 min'}
-              </div>
-            </div>
-            <div className="text-white/30 text-xl">→</div>
-          </div>
-        </button>
-      </div>
-
       {/* Hero Adventure Card */}
       <div className="px-5 mb-5 animate-slide-up stagger-3">
         <button onClick={() => { haptics.tap(); navigate(mode === 'stutter' ? '/adventure' : '/comm') }}
@@ -326,6 +299,77 @@ export default function Home() {
               <div className="text-white/40 text-xs mt-0.5">{f.desc}</div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* AI Therapy & Intelligence Section - NEW */}
+      <div className="px-5 mb-5">
+        <p className="section-label mb-3">🧠 AI-Powered Coaching</p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            onClick={startAISession}
+            disabled={startingAI}
+            className="p-4 rounded-2xl text-left transition-all active:scale-95 relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))',
+              border: '1px solid rgba(99,102,241,0.25)',
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer pointer-events-none" />
+            <div className="relative">
+              <div className="text-3xl mb-2">🎙️</div>
+              <div className="font-display font-semibold text-white text-sm mb-1">
+                {startingAI ? 'Loading...' : 'AI Therapy Session'}
+              </div>
+              <div className="text-white/40 text-xs">
+                {startingAI ? 'Preparing...' : 'Personalised coaching · 10-15 min'}
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { haptics.tap(); navigate('/ai-stutter') }}
+            className="p-4 rounded-2xl text-left transition-all active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.1))',
+              border: '1px solid rgba(16,185,129,0.25)',
+            }}
+          >
+            <div className="text-3xl mb-2">🧩</div>
+            <div className="font-display font-semibold text-white text-sm mb-1">
+              Stutter Intelligence
+            </div>
+            <div className="text-white/40 text-xs">
+              Advanced analysis & insights
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Emotional Intelligence Card */}
+      <div className="px-5 mb-5">
+        <div className="grid grid-cols-1 gap-2.5">
+          <button
+            onClick={() => { haptics.tap(); navigate('/ai-therapy') }}
+            className="p-4 rounded-2xl text-left transition-all active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, rgba(34,211,238,0.12), rgba(6,182,212,0.08))',
+              border: '1px solid rgba(34,211,238,0.2)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">🧠</div>
+              <div className="flex-1">
+                <div className="font-display font-semibold text-white text-sm mb-0.5">
+                  Emotional Intelligence & Growth
+                </div>
+                <div className="text-white/40 text-xs">
+                  Track patterns · Build resilience · Daily insights
+                </div>
+              </div>
+              <div className="text-white/30">→</div>
+            </div>
+          </button>
         </div>
       </div>
 
