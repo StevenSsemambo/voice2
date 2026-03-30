@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── NARRATIVE ARCHITECTURE ───────────────────────────────────────────────────
 // The Growth Narrative Engine does what no other layer does:
