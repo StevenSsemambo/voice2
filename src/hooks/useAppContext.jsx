@@ -25,6 +25,9 @@ export const AppProvider = ({ children }) => {
   const [theme,          setThemeState]     = useState('dark')
   const [fontSize,       setFontSizeState]  = useState('medium')
   const [streakAtRisk,   setStreakAtRisk]   = useState(false)
+  const [soul,             setSoul]             = useState(null)
+  const [emotionalReading, setEmotionalReading] = useState(null)
+  const [memoryData,       setMemoryData]       = useState(null)
 
   const loadProfile = useCallback(async () => {
     try {
@@ -121,6 +124,9 @@ export const AppProvider = ({ children }) => {
       theme, setTheme,
       fontSize, setFontSize,
       streakAtRisk, setStreakAtRisk,
+      soul, setSoul,
+      emotionalReading, setEmotionalReading,
+      memoryData, setMemoryData,
     }}>
       {children}
     </AppContext.Provider>
