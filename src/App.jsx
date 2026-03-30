@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useApp } from './hooks/useAppContext'
 import { getSetting } from './utils/db'
 
@@ -104,6 +104,15 @@ function HomeWrapper({ children }) {
 // ─────────────────────────────────────────────
 
 export default function App() {
+  const navigate = useNavigate()
+  const { 
+    soul, 
+    setSoul, 
+    emotionalReading, 
+    setEmotionalReading, 
+    memoryData, 
+    setMemoryData 
+  } = useApp()
 
   useEffect(() => {
     applyAdaptiveTheme()
@@ -150,14 +159,82 @@ export default function App() {
               <Route path="/brave-wall"    element={<RequireProfile><BraveWall /></RequireProfile>} />
               <Route path="/biomarker"     element={<RequireProfile><VoiceBiomarker /></RequireProfile>} />
               <Route path="/weekly-report" element={<RequireProfile><WeeklyReport /></RequireProfile>} />
-              <Route path="/soul-setup"   element={<RequireProfile><SoulModel onComplete={() => navigate('/ai-checkin')} /></RequireProfile>} />
-              <Route path="/ai-checkin"   element={<RequireProfile><EmotionalEngine onReadingComplete={() => navigate('/ai-memory')} /></RequireProfile>} />
-              <Route path="/ai-memory"    element={<RequireProfile><MemoryEngine onMemoryLoaded={() => navigate('/ai-coaching')} /></RequireProfile>} />
-              <Route path="/ai-coaching"  element={<RequireProfile><AdaptiveCoaching onSessionComplete={() => navigate('/ai-story')} /></RequireProfile>} />
-              <Route path="/ai-therapy"   element={<RequireProfile><TherapeuticEngine /></RequireProfile>} />
-              <Route path="/ai-stutter"   element={<RequireProfile><StutteringIntelligence /></RequireProfile>} />
-              <Route path="/ai-story"     element={<RequireProfile><GrowthNarrative onComplete={() => navigate('/home')} /></RequireProfile>} />
-
+              
+              {/* AI Routes with state management */}
+              <Route path="/soul-setup" element={
+                <RequireProfile>
+                  <SoulModel onComplete={(s) => { 
+                    setSoul(s); 
+                    navigate('/ai-checkin') 
+                  }} />
+                </RequireProfile>
+              } />
+              
+              <Route path="/ai-checkin" element={
+                <RequireProfile>
+                  <EmotionalEngine 
+                    soul={soul} 
+                    onReadingComplete={(r) => { 
+                      setEmotionalReading(r); 
+                      navigate('/ai-memory') 
+                    }} 
+                  />
+                </RequireProfile>
+              } />
+              
+              <Route path="/ai-memory" element={
+                <RequireProfile>
+                  <MemoryEngine 
+                    soul={soul} 
+                    currentReading={emotionalReading} 
+                    onMemoryLoaded={(d) => { 
+                      setMemoryData(d); 
+                      navigate('/ai-coaching') 
+                    }} 
+                  />
+                </RequireProfile>
+              } />
+              
+              <Route path="/ai-coaching" element={
+                <RequireProfile>
+                  <AdaptiveCoaching 
+                    soul={soul} 
+                    emotionalReading={emotionalReading} 
+                    memoryAnalysis={memoryData?.analysis} 
+                    onSessionComplete={() => navigate('/ai-story')} 
+                  />
+                </RequireProfile>
+              } />
+              
+              <Route path="/ai-therapy" element={
+                <RequireProfile>
+                  <TherapeuticEngine 
+                    soul={soul} 
+                    emotionalReading={emotionalReading} 
+                    memoryAnalysis={memoryData?.analysis} 
+                  />
+                </RequireProfile>
+              } />
+              
+              <Route path="/ai-stutter" element={
+                <RequireProfile>
+                  <StutteringIntelligence 
+                    soul={soul} 
+                    emotionalReading={emotionalReading} 
+                    memoryAnalysis={memoryData?.analysis} 
+                  />
+                </RequireProfile>
+              } />
+              
+              <Route path="/ai-story" element={
+                <RequireProfile>
+                  <GrowthNarrative 
+                    soul={soul} 
+                    memoryAnalysis={memoryData?.analysis} 
+                    onComplete={() => navigate('/home')} 
+                  />
+                </RequireProfile>
+              } />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
