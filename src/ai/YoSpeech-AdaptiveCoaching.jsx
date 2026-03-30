@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── EXERCISE LIBRARY ─────────────────────────────────────────────────────────
 // Full evidence-based speech therapy exercise bank
