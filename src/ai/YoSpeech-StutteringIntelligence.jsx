@@ -187,7 +187,6 @@ const TRIGGER_PROFILES = {
 };
 
 // ─── VOLUNTARY DISCLOSURE ENGINE ─────────────────────────────────────────────
-// One of the most powerful tools for people who stutter — rarely taught
 const DISCLOSURE_SCRIPTS = {
   casual: [
     "Just so you know, I stutter sometimes — it doesn't mean I'm nervous or unsure.",
@@ -350,7 +349,6 @@ function analyseStutterPattern(soul, memoryAnalysis) {
 
   const insights = [];
 
-  // Type-specific insights
   if (stutterTypes.includes("blocks")) {
     insights.push({
       priority: 10,
@@ -373,7 +371,6 @@ function analyseStutterPattern(soul, memoryAnalysis) {
     });
   }
 
-  // Trigger insights
   if (triggers.includes("phones") && triggers.includes("authority")) {
     insights.push({
       priority: 9,
@@ -385,7 +382,6 @@ function analyseStutterPattern(soul, memoryAnalysis) {
     });
   }
 
-  // Avoidance insights
   if (avoidances.includes("word substitution") && avoidances.includes("situation avoidance")) {
     insights.push({
       priority: 9,
@@ -397,7 +393,6 @@ function analyseStutterPattern(soul, memoryAnalysis) {
     });
   }
 
-  // Shame + sessions insight
   if (shame >= 4 && sessions < 5) {
     insights.push({
       priority: 8,
@@ -417,7 +412,6 @@ function buildExposureHierarchy(soul) {
   const triggers = soul?.anxietyTriggers || [];
   const hierarchy = [];
 
-  // Sort triggers by severity
   const sortedTriggers = triggers
     .map(t => TRIGGER_PROFILES[t])
     .filter(Boolean)
@@ -448,6 +442,7 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
   const [exposureHierarchy, setExposureHierarchy] = useState([]);
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [disclosureContext, setDisclosureContext] = useState("casual");
+  const contentRef = useRef(null);
 
   const stutterInsights = analyseStutterPattern(soul, memoryAnalysis);
   const identityStage = IDENTITY_WORK.detectStage(soul, memoryAnalysis);
@@ -468,7 +463,8 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
       background: "linear-gradient(160deg, #07080f 0%, #0c0a14 50%, #07080f 100%)",
       fontFamily: "'Georgia', 'Times New Roman', serif",
       color: "#cbd5e1",
-      paddingBottom: 60,
+      paddingBottom: "100px", // INCREASED: Space for bottom nav
+      overflowY: "auto",
     }}>
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -476,9 +472,24 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
         pointerEvents: "none",
       }} />
 
-      {/* Header */}
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 24px 0" }}>
+      {/* Header with back button */}
+      <div style={{ 
+        maxWidth: 680, margin: "0 auto", padding: "20px 24px 0",
+        position: "sticky", top: 0, zIndex: 10,
+        background: "linear-gradient(to bottom, #07080f 0%, #07080f 90%, transparent)",
+      }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+          <button 
+            onClick={() => window.history.back()}
+            style={{
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 18, cursor: "pointer", color: "#94a3b8",
+              transition: "all 0.2s",
+            }}
+          >←</button>
           <div style={{
             width: 46, height: 46, borderRadius: "50%",
             background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
@@ -503,7 +514,8 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
         <div style={{
           display: "flex", gap: 0,
           borderBottom: "1px solid rgba(255,255,255,0.06)",
-          marginBottom: 24, overflowX: "auto",
+          marginBottom: 24, overflowX: "auto", overflowY: "hidden",
+          WebkitOverflowScrolling: "touch",
         }}>
           {tabs.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
@@ -515,10 +527,20 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
               cursor: "pointer", textTransform: "capitalize",
               letterSpacing: "0.03em", transition: "all 0.2s",
               marginBottom: -1, whiteSpace: "nowrap",
+              flexShrink: 0,
             }}>{tab}</button>
           ))}
         </div>
+      </div>
 
+      {/* Content wrapper with proper scrolling */}
+      <div 
+        ref={contentRef}
+        style={{ 
+          maxWidth: 680, margin: "0 auto", padding: "0 24px 20px",
+          overflowY: "visible",
+        }}
+      >
         {/* ── OVERVIEW TAB ── */}
         {activeTab === "overview" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -792,7 +814,6 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
                       </div>
                     </div>
 
-                    {/* Personalised note */}
                     {soul?.communicationPersonality && tech.personalisation?.[soul.communicationPersonality] && (
                       <div style={{
                         padding: "12px 14px",
@@ -819,7 +840,6 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
         {activeTab === "identity" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* Current stage card */}
             {currentStageData && (
               <div style={{
                 padding: "22px",
@@ -848,7 +868,6 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
               </div>
             )}
 
-            {/* All stages journey */}
             <div style={{ color: "#475569", fontSize: 11, letterSpacing: "0.07em", marginBottom: 4 }}>
               THE JOURNEY
             </div>
@@ -971,9 +990,7 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
                     <span style={{ color: "#334155", fontSize: 11 }}>difficulty {step.difficulty}/10</span>
                   </div>
                 </div>
-                <div style={{
-                  display: "flex", gap: 2, flexShrink: 0,
-                }}>
+                <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
                   {Array.from({ length: 10 }).map((_, j) => (
                     <div key={j} style={{
                       width: 6, height: 6, borderRadius: 1,
@@ -1007,7 +1024,6 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
               </div>
             </div>
 
-            {/* Context selector */}
             <div style={{ display: "flex", gap: 8 }}>
               {["casual", "professional", "presentation", "phone"].map(ctx => (
                 <button key={ctx} onClick={() => setDisclosureContext(ctx)} style={{
@@ -1025,7 +1041,6 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
               ))}
             </div>
 
-            {/* Scripts */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {DISCLOSURE_SCRIPTS[disclosureContext]?.map((script, i) => (
                 <div key={i} style={{
@@ -1050,6 +1065,7 @@ export default function StutteringIntelligence({ soul = {}, emotionalReading = {
               background: "rgba(52,211,153,0.06)",
               border: "1px solid rgba(52,211,153,0.15)",
               borderRadius: 14,
+              marginBottom: 20,
             }}>
               <div style={{ color: "#34d399", fontSize: 11, letterSpacing: "0.06em", marginBottom: 8 }}>
                 YOUR PRACTICE CHALLENGE
