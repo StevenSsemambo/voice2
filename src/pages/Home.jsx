@@ -4,6 +4,7 @@ import { useApp } from '../hooks/useAppContext'
 import Flux from '../components/flux/Flux'
 import { getOfflineResponse, detectContext, getPersonalizedRecommendation } from '../ai/fluxEngine'
 import { getTotalSessions, getStreakCount, getRecentSessions } from '../utils/db'
+import { db } from '../utils/db' // Added db import for checking soul model
 import useFluxVoice from '../hooks/useFluxVoice'
 import { haptics } from '../utils/haptics'
 import { generateDailyMission, isDailyMissionDone } from '../ai/dailyMission'
@@ -36,6 +37,7 @@ export default function Home() {
   const [moodPattern,  setMoodPattern]  = useState(null)
   const [fluxStage,    setFluxStage]    = useState(null)
   const [ptr,         setPtr]         = useState(false)
+  const [startingAI,  setStartingAI]  = useState(false) // Loading state for AI session
   const ptrStartRef = useRef(0)
 
   const { profile, refreshProfile, streak: ctxStreak, streakAtRisk } = useApp()
@@ -79,6 +81,34 @@ export default function Home() {
   }, [profile])
 
   useEffect(() => { load() }, [load])
+
+  // AI Session navigation with soul model check
+  const startAISession = useCallback(async () => {
+    if (startingAI) return
+    
+    setStartingAI(true)
+    haptics.tap()
+    
+    try {
+      // Check if soul model exists and is completed
+      const existingSoul = await db.soulModel?.toCollection?.()?.first?.()?.catch(() => null) || null
+      const soulExists = existingSoul && existingSoul.onboardingComplete !== false
+      
+      if (!soulExists) {
+        // First-time user - go through soul setup
+        navigate('/soul-setup')
+      } else {
+        // Existing user - go directly to check-in
+        navigate('/ai-checkin')
+      }
+    } catch (error) {
+      console.error('Error checking soul model:', error)
+      // If error checking, assume new user and go to setup
+      navigate('/soul-setup')
+    } finally {
+      setStartingAI(false)
+    }
+  }, [navigate, startingAI])
 
   const tapFlux = () => {
     haptics.tap()
@@ -209,6 +239,33 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* AI Therapy Session Button - NEW */}
+      <div className="px-5 mb-5 animate-slide-up stagger-3">
+        <button
+          onClick={startAISession}
+          disabled={startingAI}
+          className="w-full p-5 rounded-2xl text-left transition-all active:scale-[0.98] relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(16,185,129,0.1))',
+            border: '1px solid rgba(99,102,241,0.25)',
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer pointer-events-none" />
+          <div className="relative flex items-start gap-3">
+            <div className="text-3xl">{startingAI ? '⏳' : '🧠'}</div>
+            <div className="flex-1">
+              <div className="text-white font-display font-bold text-base mb-1">
+                {startingAI ? 'Loading AI Session...' : 'AI Therapy Session'}
+              </div>
+              <div className="text-white/50 text-sm">
+                {startingAI ? 'Preparing your personalised coaching...' : 'Personalised coaching · fully offline · 10-15 min'}
+              </div>
+            </div>
+            <div className="text-white/30 text-xl">→</div>
+          </div>
+        </button>
+      </div>
 
       {/* Hero Adventure Card */}
       <div className="px-5 mb-5 animate-slide-up stagger-3">
