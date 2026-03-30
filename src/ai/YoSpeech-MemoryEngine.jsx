@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── MEMORY SCHEMA ────────────────────────────────────────────────────────────
 // Every session creates a MemoryEntry stored in Dexie (simulated here with localStorage)
