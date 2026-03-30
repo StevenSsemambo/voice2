@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── THERAPEUTIC RESPONSE ARCHITECTURE ───────────────────────────────────────
 //
