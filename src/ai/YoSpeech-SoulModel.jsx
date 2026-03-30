@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { db } from '../utils/db'
 
 // ─── SOUL MODEL SCHEMA ───────────────────────────────────────────────────────
 const INITIAL_SOUL = {
